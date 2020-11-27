@@ -1,0 +1,122 @@
+import pandas as pd
+import matplotlib.pyplot as plt 
+import numpy as np
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+import time
+from scipy import stats
+from nilearn import plotting
+from nilearn import surface
+import nibabel
+from IPython.display import clear_output
+import ipywidgets
+from IPython.display import HTML
+from IPython.display import display
+thickRes=pd.read_csv('thickRes0.csv')
+
+fscat = {'infl_left': 'lh.inflated.freesurfer.gii',
+         "pial_left": 'lh.central.freesurfer.gii',
+         "sulc_left": 'lh.sqrtsulc.freesurfer.gii',
+         "infl_right": 'rh.inflated.freesurfer.gii',
+         "pial_right": 'rh.central.freesurfer.gii',
+         "sulc_right": 'rh.sqrtsulc.freesurfer.gii',
+        }
+
+
+# Prepare the figure
+hemi_list = ipywidgets.widgets.Dropdown(
+    options=['Right', 'Left'],
+    value='Right',
+    description='Hemisphere:',
+    disabled=False,
+)
+
+mesh_list = ipywidgets.widgets.Dropdown(
+    options=['Inflated', 'Not Inflated'],
+    value='Not Inflated',
+    description='Mesh:',
+    disabled=False,
+)
+
+stat_list = ipywidgets.widgets.Dropdown(
+    options=['F-stat', 'Percent Change', 'P-value', 'Effect Size'],
+    value='Percent Change',
+    description='Stat:',
+    disabled=False,
+)
+thresh_list = ipywidgets.widgets.Dropdown(
+    options=['Permutation', 'FDR', 'Uncorrected p', 'No Threshold'],
+    value='Permutation',
+    description='Threshold:',
+    disabled=False,
+)
+
+def genSurf(hemi, mesh, stat, thresh ):
+    
+    
+
+    show=thickRes[stat]*thickRes[thresh]
+                  
+    if hemi=='Right':
+        sulc='rh.sqrtsulc.freesurfer.gii'
+        h='_right'
+        show=np.array(show)[163842:327684]
+    else:
+        sulc='lh.sqrtsulc.freesurfer.gii'
+        h='_left'
+        show=np.array(show)[0:163842]
+    if mesh=='Inflated':
+        m='infl'
+    else:
+        m='pial'
+        
+    a=plotting.view_surf(fscat[m + h], show , cmap='seismic', symmetric_cmap=True, vmax=np.array(show)[0:163842].max(), threshold=0.000000000000000000000001, bg_map=sulc, colorbar_fontsize=12, colorbar_height=1 )
+    return a
+
+
+# Prepare the figure
+tissue_list = ipywidgets.widgets.Dropdown(
+    options=['GM', 'WM'],
+    value='GM',
+    description='Tissue:',
+    disabled=False,
+)
+
+plot_list = ipywidgets.widgets.Dropdown(
+    options=['T1', 'Glass'],
+    value='T1',
+    description='Plot:',
+    disabled=False,
+)
+
+def genPlot(tissue, stat, thresh ):
+    if tissue=='GM':
+        bg='gmmeanmatlab.nii.gz'
+        tis='gm'
+    else:
+        bg='wmmeanmatlab.nii.gz'
+        tis='wm'
+    
+    if stat=='F-stat':
+        st='F'
+    elif stat=='Percent Change':
+        st='perc'
+    elif stat=='Uncorrected p':
+        st='P'
+    elif stat=='Effect size':
+        st='D'
+     
+    if thresh == 'Permutation':
+        th='F'
+    elif thresh == 'FDR':
+        th='FDR'
+    elif thresh== 'Uncorrected p':
+        th='P'
+    elif thresh=='No Threshold':
+        th='No'
+        
+    file='py/' + tis + 'VBM' + st + '-' + th + '.nii.gz'
+            
+
+    a=plotting.view_img(file, bg_img=bg, draw_cross=False, cmap='seismic', dim=0)
+    return a
